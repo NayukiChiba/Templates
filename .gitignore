@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+tests/
+datasets/
+data
+outputs/
+logs/
+results/
+.checkpoints/
+.experiments/
+
+# ai工具
+.claude/
+.github/prompt
+.github/skills
+.agent/
+.trae/
+.tools/
+.kiro
+.antigravity/
