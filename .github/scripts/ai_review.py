@@ -74,7 +74,7 @@ def main():
         return
 
     base_url = os.environ.get("LLM_BASE_URL")  # 可选
-    model = os.environ.get("LLM_MODEL", "gpt-4o")
+    model = os.environ.get("LLM_MODEL")
 
     pr_title = os.environ.get("PR_TITLE", "")
     pr_body = os.environ.get("PR_BODY", "")
