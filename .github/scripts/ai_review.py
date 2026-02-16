@@ -5,6 +5,7 @@ AI Code Review Script
 """
 
 import os
+
 from openai import OpenAI
 
 SYSTEM_PROMPT = """你是一个资深的代码审查专家。请审查以下 Pull Request 的代码变更。
@@ -48,12 +49,12 @@ def get_diff_content() -> str:
     """读取 PR diff 内容"""
     diff_file = os.environ.get("diff_file", "pr_diff.txt")
     if os.path.exists(diff_file):
-        with open(diff_file, "r", encoding="utf-8", errors="ignore") as f:
+        with open(diff_file, encoding="utf-8", errors="ignore") as f:
             return f.read()
 
     # 备用：直接读取
     if os.path.exists("pr_diff.txt"):
-        with open("pr_diff.txt", "r", encoding="utf-8", errors="ignore") as f:
+        with open("pr_diff.txt", encoding="utf-8", errors="ignore") as f:
             return f.read()
 
     return ""
@@ -95,7 +96,7 @@ def main():
 **标题:** {pr_title}
 
 **描述:**
-{pr_body or '无描述'}
+{pr_body or "无描述"}
 
 ## 代码变更 (diff)
 
@@ -116,7 +117,10 @@ def main():
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT.format(commit_sha=commit_sha)},
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT.format(commit_sha=commit_sha),
+                },
                 {"role": "user", "content": user_message},
             ],
             temperature=0.3,
