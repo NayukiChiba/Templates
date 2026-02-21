@@ -112,10 +112,15 @@ def callChatApi(
 
     with httpx.Client(timeout=120) as client:
         response = client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise Exception(f"HTTP {response.status_code}: {response.text}")
         data = response.json()
 
-    return data["choices"][0]["message"]["content"]
+    # 校验响应结构
+    choices = data.get("choices", [])
+    if not choices:
+        raise Exception(f"API 响应缺少 choices 字段: {data}")
+    return choices[0].get("message", {}).get("content", "")
 
 
 def callMessagesApi(
@@ -156,10 +161,15 @@ def callMessagesApi(
 
     with httpx.Client(timeout=120) as client:
         response = client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise Exception(f"HTTP {response.status_code}: {response.text}")
         data = response.json()
 
-    return data["content"][0]["text"]
+    # 校验响应结构
+    content = data.get("content", [])
+    if not content:
+        raise Exception(f"API 响应缺少 content 字段: {data}")
+    return content[0].get("text", "")
 
 
 def callResponseApi(
@@ -198,11 +208,23 @@ def callResponseApi(
 
     with httpx.Client(timeout=120) as client:
         response = client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
+        if response.status_code != 200:
+            raise Exception(f"HTTP {response.status_code}: {response.text}")
         data = response.json()
 
-    # Responses API 返回格式
-    return data.get("output_text", data.get("output", ""))
+    # Responses API 返回格式: output_text 或 output 数组
+    if "output_text" in data:
+        return data["output_text"]
+
+    # 解析 output 数组结构
+    output = data.get("output", [])
+    if output and isinstance(output, list):
+        for item in output:
+            if item.get("type") == "message":
+                content = item.get("content", [])
+                if content and content[0].get("type") == "output_text":
+                    return content[0].get("text", "")
+    raise Exception(f"无法解析 Responses API 响应: {data}")
 
 
 def callLlmApi(
