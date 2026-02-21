@@ -222,9 +222,14 @@ def callResponseApi(
         for item in output:
             if item.get("type") == "message":
                 content = item.get("content", [])
-                if content and content[0].get("type") == "output_text":
-                    return content[0].get("text", "")
+                # 遍历 content 找到 output_text 类型
+                for block in content:
+                    if block.get("type") == "output_text":
+                        return block.get("text", "")
     raise Exception(f"无法解析 Responses API 响应: {data}")
+
+
+VALID_API_TYPES = {"chat", "messages", "response"}
 
 
 def callLlmApi(
@@ -249,6 +254,9 @@ def callLlmApi(
     Returns:
         模型响应内容
     """
+    if apiType not in VALID_API_TYPES:
+        raise ValueError(f"无效的 API 类型: '{apiType}'，支持的类型: {VALID_API_TYPES}")
+
     print(f"Using API type: {apiType}")
 
     if apiType == "messages":
