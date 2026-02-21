@@ -72,8 +72,6 @@ def truncateDiff(diff: str, maxChars: int = 60000) -> str:
     return diff[:maxChars] + "\n\n... (diff 过长，已截断)"
 
 
-
-
 def callChatApi(
     apiKey: str,
     baseUrl: str,
