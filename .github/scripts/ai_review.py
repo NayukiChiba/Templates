@@ -6,7 +6,7 @@ AI Code Review Script
 
 import os
 
-from openai import OpenAI
+import httpx
 
 SYSTEM_PROMPT = """你是一个资深的代码审查专家。请审查以下 Pull Request 的代码变更。
 
@@ -49,11 +49,11 @@ SYSTEM_PROMPT = """你是一个资深的代码审查专家。请审查以下 Pul
 """
 
 
-def get_diff_content() -> str:
+def getDiffContent() -> str:
     """读取 PR diff 内容"""
-    diff_file = os.environ.get("diff_file", "pr_diff.txt")
-    if os.path.exists(diff_file):
-        with open(diff_file, encoding="utf-8", errors="ignore") as f:
+    diffFile = os.environ.get("diff_file", "pr_diff.txt")
+    if os.path.exists(diffFile):
+        with open(diffFile, encoding="utf-8", errors="ignore") as f:
             return f.read()
 
     # 备用：直接读取
@@ -64,87 +64,248 @@ def get_diff_content() -> str:
     return ""
 
 
-def truncate_diff(diff: str, max_chars: int = 60000) -> str:
+def truncateDiff(diff: str, maxChars: int = 60000) -> str:
     """截断过长的 diff，避免超出 token 限制"""
-    if len(diff) <= max_chars:
+    if len(diff) <= maxChars:
         return diff
 
-    return diff[:max_chars] + "\n\n... (diff 过长，已截断)"
+    return diff[:maxChars] + "\n\n... (diff 过长，已截断)"
+
+
+
+
+def callChatApi(
+    apiKey: str,
+    baseUrl: str,
+    model: str,
+    systemPrompt: str,
+    userMessage: str,
+) -> str:
+    """
+    调用 OpenAI Chat Completions API
+
+    Args:
+        apiKey: API 密钥
+        baseUrl: API 基础 URL (如 https://api.openai.com/v1)
+        model: 模型名称
+        systemPrompt: 系统提示
+        userMessage: 用户消息
+
+    Returns:
+        模型响应内容
+    """
+    # 拼接完整 URL: baseUrl + /chat/completions
+    url = baseUrl.rstrip("/") + "/chat/completions"
+
+    headers = {
+        "Authorization": f"Bearer {apiKey}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": systemPrompt},
+            {"role": "user", "content": userMessage},
+        ],
+        "temperature": 0.3,
+        "max_tokens": 2000,
+    }
+
+    with httpx.Client(timeout=120) as client:
+        response = client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+    return data["choices"][0]["message"]["content"]
+
+
+def callMessagesApi(
+    apiKey: str,
+    baseUrl: str,
+    model: str,
+    systemPrompt: str,
+    userMessage: str,
+) -> str:
+    """
+    调用 Anthropic Messages API
+
+    Args:
+        apiKey: API 密钥
+        baseUrl: API 基础 URL (如 https://api.anthropic.com/v1)
+        model: 模型名称
+        systemPrompt: 系统提示
+        userMessage: 用户消息
+
+    Returns:
+        模型响应内容
+    """
+    # 拼接完整 URL: baseUrl + /messages
+    url = baseUrl.rstrip("/") + "/messages"
+
+    headers = {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+    }
+
+    payload = {
+        "model": model,
+        "max_tokens": 2000,
+        "system": systemPrompt,
+        "messages": [{"role": "user", "content": userMessage}],
+    }
+
+    with httpx.Client(timeout=120) as client:
+        response = client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+    return data["content"][0]["text"]
+
+
+def callResponseApi(
+    apiKey: str,
+    baseUrl: str,
+    model: str,
+    systemPrompt: str,
+    userMessage: str,
+) -> str:
+    """
+    调用 OpenAI Responses API
+
+    Args:
+        apiKey: API 密钥
+        baseUrl: API 基础 URL (如 https://api.openai.com/v1)
+        model: 模型名称
+        systemPrompt: 系统提示
+        userMessage: 用户消息
+
+    Returns:
+        模型响应内容
+    """
+    # 拼接完整 URL: baseUrl + /responses
+    url = baseUrl.rstrip("/") + "/responses"
+
+    headers = {
+        "Authorization": f"Bearer {apiKey}",
+        "Content-Type": "application/json",
+    }
+
+    payload = {
+        "model": model,
+        "instructions": systemPrompt,
+        "input": userMessage,
+    }
+
+    with httpx.Client(timeout=120) as client:
+        response = client.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+
+    # Responses API 返回格式
+    return data.get("output_text", data.get("output", ""))
+
+
+def callLlmApi(
+    apiKey: str,
+    baseUrl: str,
+    model: str,
+    systemPrompt: str,
+    userMessage: str,
+    apiType: str,
+) -> str:
+    """
+    统一调用 LLM API
+
+    Args:
+        apiKey: API 密钥
+        baseUrl: API 基础 URL (如 https://api.openai.com/v1)
+        model: 模型名称
+        systemPrompt: 系统提示
+        userMessage: 用户消息
+        apiType: API 类型 ('chat', 'messages', 'response')
+
+    Returns:
+        模型响应内容
+    """
+    print(f"Using API type: {apiType}")
+
+    if apiType == "messages":
+        return callMessagesApi(apiKey, baseUrl, model, systemPrompt, userMessage)
+    elif apiType == "response":
+        return callResponseApi(apiKey, baseUrl, model, systemPrompt, userMessage)
+    else:
+        return callChatApi(apiKey, baseUrl, model, systemPrompt, userMessage)
 
 
 def main():
-    api_key = os.environ.get("LLM_API_KEY")
-    if not api_key:
+    apiKey = os.environ.get("LLM_API_KEY")
+    if not apiKey:
         print("Error: LLM_API_KEY not set")
         return
 
-    base_url = os.environ.get("LLM_BASE_URL")  # 可选
-    model = os.environ.get("LLM_MODEL")
+    baseUrl = os.environ.get("LLM_BASE_URL")  # 必需，如 https://api.openai.com/v1
+    if not baseUrl:
+        print("Error: LLM_BASE_URL not set")
+        return
 
-    pr_title = os.environ.get("PR_TITLE", "")
-    pr_body = os.environ.get("PR_BODY", "")
+    model = os.environ.get("LLM_MODEL")
+    if not model:
+        print("Error: LLM_MODEL not set")
+        return
+
+    apiType = os.environ.get("LLM_API_TYPE", "chat")  # chat, messages, response
+
+    prTitle = os.environ.get("PR_TITLE", "")
+    prBody = os.environ.get("PR_BODY", "")
 
     # 获取 commit SHA
-    commit_sha = os.environ.get("GITHUB_SHA", "unknown")[:10]
+    commitSha = os.environ.get("GITHUB_SHA", "unknown")[:10]
 
-    diff_content = get_diff_content()
-    if not diff_content:
+    diffContent = getDiffContent()
+    if not diffContent:
         print("No diff content found, skipping review")
         return
 
-    diff_content = truncate_diff(diff_content)
+    diffContent = truncateDiff(diffContent)
 
     # 构造用户消息
-    user_message = f"""## Pull Request 信息
+    userMessage = f"""## Pull Request 信息
 
-**标题:** {pr_title}
+**标题:** {prTitle}
 
 **描述:**
-{pr_body or "无描述"}
+{prBody or "无描述"}
 
 ## 代码变更 (diff)
 
 ```diff
-{diff_content}
+{diffContent}
 ```
 
 请审查以上代码变更。"""
 
-    # 初始化 OpenAI 客户端（兼容其他 API）
-    client_kwargs = {"api_key": api_key}
-    if base_url:
-        client_kwargs["base_url"] = base_url
-
-    client = OpenAI(**client_kwargs)
-
     try:
-        response = client.chat.completions.create(
+        systemPrompt = SYSTEM_PROMPT.format(commit_sha=commitSha)
+        reviewContent = callLlmApi(
+            apiKey=apiKey,
+            baseUrl=baseUrl,
             model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT.format(commit_sha=commit_sha),
-                },
-                {"role": "user", "content": user_message},
-            ],
-            temperature=0.3,
-            max_tokens=2000,
+            systemPrompt=systemPrompt,
+            userMessage=userMessage,
+            apiType=apiType,
         )
-
-        review_content = response.choices[0].message.content
 
         # 写入结果文件
         with open("review_result.md", "w", encoding="utf-8") as f:
-            f.write(review_content)
+            f.write(reviewContent)
 
         print("Review completed successfully!")
-        print(review_content)
+        print(reviewContent)
 
     except Exception as e:
         print(f"Error calling LLM API: {e}")
-        # 写入错误信息（可选择不发评论）
-        # with open("review_result.md", "w") as f:
-        #     f.write(f"⚠️ AI 审查失败: {str(e)}")
 
 
 if __name__ == "__main__":
