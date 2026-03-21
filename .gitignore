@@ -231,5 +231,6 @@ results/
 .tools/
 .kiro
 .antigravity/
-.vscode
+.vscode/
 .shared/
+.idea/
