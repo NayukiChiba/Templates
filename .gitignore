@@ -208,16 +208,17 @@ __marimo__/
 
 # 计划部分
 plans/
-# 测试
-tests/
+
 # 数据集
 datasets/
-data/
+
 # 输出
 outputs/
+
 # 日志
 logs/
 results/
+
 # Jupyter记录
 .checkpoints/
 .experiments/
@@ -234,3 +235,141 @@ results/
 .vscode/
 .shared/
 .idea/
+
+# 通用系统与临时文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100/
+.Trashes/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# 通用日志与运行时文件
+*.out
+*.err
+*.pid
+*.pid.lock
+*.seed
+*.stackdump
+
+# 前端 / Node.js / 工程化产物
+node_modules/
+.npm/
+.pnpm-store/
+.pnpm-debug.log*
+.pnp.*
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+.parcel-cache/
+.cache-loader/
+.eslintcache
+.stylelintcache
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+.angular/cache/
+.astro/
+.vercel/
+.netlify/
+.docusaurus/
+storybook-static/
+dist-ssr/
+coverage/
+playwright-report/
+test-results/
+cypress/videos/
+cypress/screenshots/
+*.tsbuildinfo
+vite.svg
+
+# Rust
+target/
+# 如后续仓库需要提交 Rust 应用锁文件，可移除此规则
+Cargo.lock
+**/*.rs.bk
+
+# Go
+bin/
+.coverprofile
+
+# Java / Kotlin / Gradle
+.gradle/
+out/
+*.class
+
+# C / C++ / CMake
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+Makefile
+makedep*
+libtool
+aclocal.m4
+m4/
+autom4te.cache/
+
+# Swift / Xcode
+.build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcuserdatad/
+*.xcuserstate
+
+# Terraform / Serverless
+.terraform/
+.terraform.lock.hcl
+.serverless/
+.aws-sam/
+
+# 数据库与本地服务文件
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.mdb
+
+# 本地编辑器 / IDE
+.history/
+.fleet/
+*.iml
+*.suo
+*.user
+*.userossc
+*.sln.docstates
+
+# 更多 AI 工具与代理目录
+.aider*
+.cursor/
+.cursor-tutor/
+.windsurf/
+.continue/
+.codeium/
+.copilot/
+.cline/
+.roo/
+.roo-cline/
+.augment/
+.qodo/
+.openhands/
+.openai/
+.mcp/
+.codex/
+
+# 本地产物目录
+tmp/
+temp/
+debug/
+release/
