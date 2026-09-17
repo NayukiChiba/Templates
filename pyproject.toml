@@ -1,6 +1,6 @@
 # --------------- Ruff 配置 ---------------
 [tool.ruff]
-target-version = "py310"
+target-version = "py312"
 line-length = 88
 
 [tool.ruff.lint]
@@ -44,7 +44,7 @@ torchaudio = { index = "pytorch-cu128-original" }
 name = "templates" # 这里需要设置为你的项目名称，通常与包名相同
 version = "0.1.0"
 description = "项目模板" # 这里需要设置为你的项目描述，简要说明项目的功能和用途
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
